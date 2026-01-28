@@ -236,9 +236,11 @@ terraform import nodeping_check.example 201205050153W2Q4C-0J2HSIRF
 				Default:     booldefault.StaticBool(false),
 			},
 			"tags": schema.ListAttribute{
-				Description: "Tags for grouping checks.",
-				Optional:    true,
-				ElementType: types.StringType,
+				Description:         "Tags for grouping checks. Provider default_tags are automatically merged with these tags.",
+				MarkdownDescription: "Tags for grouping checks. Provider `default_tags` are automatically merged with these tags.",
+				Optional:            true,
+				Computed:            true,
+				ElementType:         types.StringType,
 			},
 			"state": schema.Int64Attribute{
 				Description: "Current state of the check (0 = failing, 1 = passing).",
