@@ -14,9 +14,10 @@ import (
 )
 
 var (
-	_ resource.Resource                = &CheckResource{}
-	_ resource.ResourceWithConfigure   = &CheckResource{}
-	_ resource.ResourceWithImportState = &CheckResource{}
+	_ resource.Resource                   = &CheckResource{}
+	_ resource.ResourceWithConfigure      = &CheckResource{}
+	_ resource.ResourceWithImportState    = &CheckResource{}
+	_ resource.ResourceWithModifyPlan     = &CheckResource{}
 )
 
 type CheckResource struct {
@@ -273,6 +274,62 @@ func (r *CheckResource) ImportState(ctx context.Context, req resource.ImportStat
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
+func (r *CheckResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanRequest, resp *resource.ModifyPlanResponse) {
+	// Skip if destroying or client not configured
+	if req.Plan.Raw.IsNull() || r.client == nil {
+		return
+	}
+
+	defaultTags := r.client.GetDefaultTags()
+	if len(defaultTags) == 0 {
+		return
+	}
+
+	var plan CheckResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Get configured tags from plan
+	var configuredTags []string
+	if !plan.Tags.IsNull() && !plan.Tags.IsUnknown() {
+		resp.Diagnostics.Append(plan.Tags.ElementsAs(ctx, &configuredTags, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
+	// Merge default tags with configured tags
+	mergedTags := make([]string, 0, len(defaultTags)+len(configuredTags))
+	mergedTags = append(mergedTags, defaultTags...)
+	mergedTags = append(mergedTags, configuredTags...)
+
+	// Deduplicate
+	seen := make(map[string]bool)
+	uniqueTags := []string{}
+	for _, tag := range mergedTags {
+		if !seen[tag] {
+			seen[tag] = true
+			uniqueTags = append(uniqueTags, tag)
+		}
+	}
+
+	// Convert to types.List
+	tagElements := make([]types.String, len(uniqueTags))
+	for i, tag := range uniqueTags {
+		tagElements[i] = types.StringValue(tag)
+	}
+	tagsList, diags := types.ListValueFrom(ctx, types.StringType, tagElements)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	plan.Tags = tagsList
+	resp.Diagnostics.Append(resp.Plan.Set(ctx, &plan)...)
+}
+
 func (r *CheckResource) buildCreateRequest(ctx context.Context, plan *CheckResourceModel, diags *diag.Diagnostics) client.CheckCreateRequest {
 	req := client.CheckCreateRequest{
 		Type:   plan.Type.ValueString(),
@@ -335,28 +392,11 @@ func (r *CheckResource) buildCreateRequest(ctx context.Context, plan *CheckResou
 		req.HomeLoc = plan.HomeLoc.ValueString()
 	}
 
-	// Merge default tags from provider with resource-specific tags
-	var tags []string
-	defaultTags := r.client.GetDefaultTags()
-	if len(defaultTags) > 0 {
-		tags = append(tags, defaultTags...)
-	}
+	// Tags are already merged with default_tags in ModifyPlan
 	if !plan.Tags.IsNull() {
-		var resourceTags []string
-		diags.Append(plan.Tags.ElementsAs(ctx, &resourceTags, false)...)
-		tags = append(tags, resourceTags...)
-	}
-	if len(tags) > 0 {
-		// Deduplicate tags
-		seen := make(map[string]bool)
-		uniqueTags := []string{}
-		for _, tag := range tags {
-			if !seen[tag] {
-				seen[tag] = true
-				uniqueTags = append(uniqueTags, tag)
-			}
-		}
-		req.Tags = uniqueTags
+		var tags []string
+		diags.Append(plan.Tags.ElementsAs(ctx, &tags, false)...)
+		req.Tags = tags
 	}
 
 	if !plan.ContentString.IsNull() {
