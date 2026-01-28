@@ -185,10 +185,13 @@ func (r *CheckResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		plan.Modified = plannedModified
 	}
 
-	// Restore planned contentstring to avoid null vs empty string mismatch
-	// If plan was null and API returned "", keep null. If plan was "" and API returned "", keep "".
-	if plan.ContentString.ValueString() == "" {
-		plan.ContentString = plannedContentString
+	// Restore planned contentstring if plan had a non-empty value but API returned empty
+	// This handles the case where user explicitly set contentstring in config
+	if !plannedContentString.IsNull() && plannedContentString.ValueString() != "" {
+		// User explicitly set contentstring, keep their value if API returned empty
+		if plan.ContentString.IsNull() || plan.ContentString.ValueString() == "" {
+			plan.ContentString = plannedContentString
+		}
 	}
 
 	tflog.Debug(ctx, "Updated check", map[string]interface{}{
@@ -557,9 +560,13 @@ func (r *CheckResource) mapCheckToModel(ctx context.Context, check *client.Check
 		model.Sens = types.Int64Value(int64(s))
 	}
 
-	// ContentString: preserve empty string if it was set in config, otherwise null
-	// The API returns empty string as "", not null
-	model.ContentString = types.StringValue(check.Parameters.ContentString)
+	// ContentString: only set if API returns non-empty value
+	// Empty string from API should be treated as null to match TF config expectations
+	if check.Parameters.ContentString != "" {
+		model.ContentString = types.StringValue(check.Parameters.ContentString)
+	} else {
+		model.ContentString = types.StringNull()
+	}
 
 	// Map boolean fields from API - only set if API returns a value
 	// These fields are check-type specific and may not be returned by the API
