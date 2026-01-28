@@ -92,6 +92,26 @@ provider "nodeping" {
   customer_id = "SUBACCOUNT_ID"
 }
 ` + "```" + `
+
+## Default Tags
+
+You can define default tags at the provider level that will be automatically applied to all resources that support tags (e.g., checks):
+
+` + "```hcl" + `
+provider "nodeping" {
+  api_token    = var.nodeping_token
+  default_tags = ["managed-by-terraform", "team-devops"]
+}
+
+resource "nodeping_check" "example" {
+  type   = "HTTP"
+  target = "https://example.com"
+  label  = "Example Check"
+  tags   = ["production"]  # Will be merged with default_tags
+}
+` + "```" + `
+
+The resulting check will have tags: ` + "`[\"managed-by-terraform\", \"team-devops\", \"production\"]`" + `. Duplicate tags are automatically removed.
 `,
 		Attributes: map[string]schema.Attribute{
 			"api_token": schema.StringAttribute{
