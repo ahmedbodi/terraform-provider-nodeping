@@ -81,12 +81,20 @@ func (r *CheckResource) Create(ctx context.Context, req resource.CreateRequest, 
 
 	// Preserve the original target from plan if API normalized it (e.g., added trailing slash)
 	originalTarget := plan.Target
+	plannedTags := plan.Tags
 
 	r.mapCheckToModel(ctx, check, &plan)
 
 	// Restore original target if it's semantically equivalent (trailing slash difference)
 	if normalizeURL(originalTarget.ValueString()) == normalizeURL(plan.Target.ValueString()) {
 		plan.Target = originalTarget
+	}
+
+	// Restore planned tags if API returned null/empty but we sent tags
+	if !plannedTags.IsNull() && !plannedTags.IsUnknown() {
+		if plan.Tags.IsNull() {
+			plan.Tags = plannedTags
+		}
 	}
 
 	tflog.Debug(ctx, "Created check", map[string]interface{}{
@@ -172,6 +180,7 @@ func (r *CheckResource) Update(ctx context.Context, req resource.UpdateRequest, 
 	// These fields change on every API call but Terraform expects the planned values
 	plannedModified := plan.Modified
 	plannedContentString := plan.ContentString
+	plannedTags := plan.Tags
 
 	r.mapCheckToModel(ctx, check, &plan)
 
@@ -192,6 +201,14 @@ func (r *CheckResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		// User explicitly set contentstring, keep their value if API returned empty
 		if plan.ContentString.IsNull() || plan.ContentString.ValueString() == "" {
 			plan.ContentString = plannedContentString
+		}
+	}
+
+	// Restore planned tags if API returned null/empty but we sent tags
+	// This can happen if the API doesn't immediately return the tags we just set
+	if !plannedTags.IsNull() && !plannedTags.IsUnknown() {
+		if plan.Tags.IsNull() {
+			plan.Tags = plannedTags
 		}
 	}
 
