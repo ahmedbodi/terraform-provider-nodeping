@@ -35,6 +35,7 @@ type Client struct {
 	retryMinWait time.Duration
 	retryMaxWait time.Duration
 	userAgent    string
+	defaultTags  []string
 }
 
 type ClientConfig struct {
@@ -47,6 +48,7 @@ type ClientConfig struct {
 	RetryMaxWait time.Duration
 	Timeout      time.Duration
 	UserAgent    string
+	DefaultTags  []string
 }
 
 func NewClient(cfg ClientConfig) *Client {
@@ -84,6 +86,7 @@ func NewClient(cfg ClientConfig) *Client {
 		retryMinWait: cfg.RetryMinWait,
 		retryMaxWait: cfg.RetryMaxWait,
 		userAgent:    cfg.UserAgent,
+		defaultTags:  cfg.DefaultTags,
 	}
 }
 
@@ -98,7 +101,12 @@ func (c *Client) WithCustomerID(customerID string) *Client {
 		retryMinWait: c.retryMinWait,
 		retryMaxWait: c.retryMaxWait,
 		userAgent:    c.userAgent,
+		defaultTags:  c.defaultTags,
 	}
+}
+
+func (c *Client) GetDefaultTags() []string {
+	return c.defaultTags
 }
 
 type requestOptions struct {

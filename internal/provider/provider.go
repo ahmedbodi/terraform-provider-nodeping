@@ -36,6 +36,7 @@ type NodePingProviderModel struct {
 	MaxRetries   types.Int64   `tfsdk:"max_retries"`
 	RetryWaitMin types.Int64   `tfsdk:"retry_wait_min"`
 	RetryWaitMax types.Int64   `tfsdk:"retry_wait_max"`
+	DefaultTags  types.List    `tfsdk:"default_tags"`
 }
 
 func New(version string) func() provider.Provider {
@@ -125,6 +126,12 @@ provider "nodeping" {
 				Description: "Maximum wait time in seconds between retries. Defaults to 30.",
 				Optional:    true,
 			},
+			"default_tags": schema.ListAttribute{
+				Description:         "Default tags to apply to all resources that support tags (e.g., checks). These tags are merged with resource-specific tags.",
+				MarkdownDescription: "Default tags to apply to all resources that support tags (e.g., checks). These tags are merged with resource-specific tags.",
+				Optional:            true,
+				ElementType:         types.StringType,
+			},
 		},
 	}
 }
@@ -187,6 +194,14 @@ func (p *NodePingProvider) Configure(ctx context.Context, req provider.Configure
 		retryWaitMax = time.Duration(config.RetryWaitMax.ValueInt64()) * time.Second
 	}
 
+	var defaultTags []string
+	if !config.DefaultTags.IsNull() {
+		resp.Diagnostics.Append(config.DefaultTags.ElementsAs(ctx, &defaultTags, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
 	clientCfg := client.ClientConfig{
 		APIToken:     apiToken,
 		CustomerID:   customerID,
@@ -196,6 +211,7 @@ func (p *NodePingProvider) Configure(ctx context.Context, req provider.Configure
 		RetryMinWait: retryWaitMin,
 		RetryMaxWait: retryWaitMax,
 		UserAgent:    "terraform-provider-nodeping/" + p.version,
+		DefaultTags:  defaultTags,
 	}
 
 	c := client.NewClient(clientCfg)

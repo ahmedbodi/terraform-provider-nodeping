@@ -335,10 +335,28 @@ func (r *CheckResource) buildCreateRequest(ctx context.Context, plan *CheckResou
 		req.HomeLoc = plan.HomeLoc.ValueString()
 	}
 
+	// Merge default tags from provider with resource-specific tags
+	var tags []string
+	defaultTags := r.client.GetDefaultTags()
+	if len(defaultTags) > 0 {
+		tags = append(tags, defaultTags...)
+	}
 	if !plan.Tags.IsNull() {
-		var tags []string
-		diags.Append(plan.Tags.ElementsAs(ctx, &tags, false)...)
-		req.Tags = tags
+		var resourceTags []string
+		diags.Append(plan.Tags.ElementsAs(ctx, &resourceTags, false)...)
+		tags = append(tags, resourceTags...)
+	}
+	if len(tags) > 0 {
+		// Deduplicate tags
+		seen := make(map[string]bool)
+		uniqueTags := []string{}
+		for _, tag := range tags {
+			if !seen[tag] {
+				seen[tag] = true
+				uniqueTags = append(uniqueTags, tag)
+			}
+		}
+		req.Tags = uniqueTags
 	}
 
 	if !plan.ContentString.IsNull() {
