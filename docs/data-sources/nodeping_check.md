@@ -1,3 +1,10 @@
+---
+page_title: "nodeping_check Data Source - terraform-provider-nodeping"
+subcategory: ""
+description: |-
+  Fetches a NodePing check by ID.
+---
+
 # nodeping_check (Data Source)
 
 Fetches a NodePing check by ID.

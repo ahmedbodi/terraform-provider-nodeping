@@ -1,4 +1,11 @@
-# nodeping_contact
+---
+page_title: "nodeping_contact Resource - terraform-provider-nodeping"
+subcategory: ""
+description: |-
+  Manages a NodePing contact for receiving notifications.
+---
+
+# nodeping_contact (Resource)
 
 Manages a NodePing contact for receiving notifications.
 

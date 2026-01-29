@@ -1,3 +1,10 @@
+---
+page_title: "nodeping_contact Data Source - terraform-provider-nodeping"
+subcategory: ""
+description: |-
+  Fetches a NodePing contact by ID.
+---
+
 # nodeping_contact (Data Source)
 
 Fetches a NodePing contact by ID.

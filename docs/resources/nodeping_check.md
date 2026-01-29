@@ -1,4 +1,11 @@
-# nodeping_check
+---
+page_title: "nodeping_check Resource - terraform-provider-nodeping"
+subcategory: ""
+description: |-
+  Manages a NodePing monitoring check.
+---
+
+# nodeping_check (Resource)
 
 Manages a NodePing monitoring check.
 

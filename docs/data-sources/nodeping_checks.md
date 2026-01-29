@@ -1,3 +1,10 @@
+---
+page_title: "nodeping_checks Data Source - terraform-provider-nodeping"
+subcategory: ""
+description: |-
+  Fetches all NodePing checks with optional filtering.
+---
+
 # nodeping_checks (Data Source)
 
 Fetches all NodePing checks with optional filtering.
