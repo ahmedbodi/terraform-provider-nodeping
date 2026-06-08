@@ -666,6 +666,13 @@ func (r *CheckResource) mapCheckToModel(ctx context.Context, check *client.Check
 	// Mute is a top-level field that the API always returns
 	model.Mute = types.BoolValue(parseBoolInterface(check.Mute))
 
+	// Dep is a top-level field for notification dependency
+	if dep, ok := check.Dep.(string); ok && dep != "" {
+		model.Dep = types.StringValue(dep)
+	} else {
+		model.Dep = types.StringNull()
+	}
+
 	// Map statuscode from API - only set if API returns a value
 	if check.Parameters.StatusCode != nil {
 		if statusCode, ok := check.Parameters.StatusCode.(float64); ok {

@@ -30,6 +30,7 @@ type CheckDataSourceModel struct {
 	Interval    types.Float64 `tfsdk:"interval"`
 	Threshold   types.Int64   `tfsdk:"threshold"`
 	Sens        types.Int64   `tfsdk:"sens"`
+	Dep         types.String  `tfsdk:"dep"`
 	State       types.Int64   `tfsdk:"state"`
 	Created     types.Int64   `tfsdk:"created"`
 	Modified    types.Int64   `tfsdk:"modified"`
@@ -102,6 +103,10 @@ output "check_state" {
 			},
 			"sens": schema.Int64Attribute{
 				Description: "Sensitivity (rechecks before status change).",
+				Computed:    true,
+			},
+			"dep": schema.StringAttribute{
+				Description: "Check ID for notification dependency.",
 				Computed:    true,
 			},
 			"state": schema.Int64Attribute{
@@ -188,6 +193,12 @@ func (d *CheckDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 	config.State = types.Int64Value(int64(check.State))
 	config.Created = types.Int64Value(check.Created)
 	config.Modified = types.Int64Value(check.Modified)
+
+	if dep, ok := check.Dep.(string); ok && dep != "" {
+		config.Dep = types.StringValue(dep)
+	} else {
+		config.Dep = types.StringNull()
+	}
 
 	if check.Description != "" {
 		config.Description = types.StringValue(check.Description)
