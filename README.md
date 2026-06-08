@@ -187,6 +187,27 @@ resource "nodeping_check" "ssl_cert" {
 }
 ```
 
+### Create a Check with Notification Dependency
+
+```hcl
+# Primary check (e.g., router or core service)
+resource "nodeping_check" "router" {
+  type    = "PING"
+  target  = "192.168.1.1"
+  label   = "Edge Router"
+  enabled = true
+}
+
+# Dependent check - notifications suppressed if router is down
+resource "nodeping_check" "web_service" {
+  type    = "HTTP"
+  target  = "https://internal.example.com"
+  label   = "Internal Web Service"
+  enabled = true
+  dep     = nodeping_check.router.id  # Suppress notifications if router check is failing
+}
+```
+
 ## Resources
 
 ### nodeping_contact
@@ -250,6 +271,7 @@ Manages a NodePing monitoring check.
 | `interval` | float | No | Check interval in minutes |
 | `threshold` | int | No | Timeout in seconds |
 | `sens` | int | No | Rechecks before status change |
+| `dep` | string | No | Check ID for notification dependency (suppresses notifications if dependent check is failing) |
 | `runlocations` | list | No | Probe locations |
 | `tags` | list | No | Tags for grouping |
 

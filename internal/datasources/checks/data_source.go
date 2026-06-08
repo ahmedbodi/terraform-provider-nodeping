@@ -32,6 +32,7 @@ type CheckModel struct {
 	Label      types.String  `tfsdk:"label"`
 	Enabled    types.Bool    `tfsdk:"enabled"`
 	Interval   types.Float64 `tfsdk:"interval"`
+	Dep        types.String  `tfsdk:"dep"`
 	State      types.Int64   `tfsdk:"state"`
 	Tags       types.List    `tfsdk:"tags"`
 }
@@ -100,6 +101,10 @@ output "check_ids" {
 						},
 						"interval": schema.Float64Attribute{
 							Description: "Check interval in minutes.",
+							Computed:    true,
+						},
+						"dep": schema.StringAttribute{
+							Description: "Check ID for notification dependency.",
 							Computed:    true,
 						},
 						"state": schema.Int64Attribute{
@@ -173,6 +178,12 @@ func (d *ChecksDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 
 		if interval, err := check.Interval.Float64(); err == nil {
 			checkModel.Interval = types.Float64Value(interval)
+		}
+
+		if dep, ok := check.Dep.(string); ok && dep != "" {
+			checkModel.Dep = types.StringValue(dep)
+		} else {
+			checkModel.Dep = types.StringNull()
 		}
 
 		if check.Tags != nil {
