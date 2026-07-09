@@ -40,3 +40,4 @@ coverage.html
 
 # Vendor (if used)
 vendor/
+.release-keys/

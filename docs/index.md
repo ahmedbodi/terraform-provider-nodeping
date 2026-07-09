@@ -15,7 +15,7 @@ The NodePing provider allows you to manage [NodePing](https://nodeping.com/) mon
 terraform {
   required_providers {
     nodeping = {
-      source  = "phizzl/nodeping"
+      source  = "ahmedbodi/nodeping"
       version = "~> 0.2"
     }
   }

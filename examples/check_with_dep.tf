@@ -6,7 +6,7 @@
 terraform {
   required_providers {
     nodeping = {
-      source  = "phizzl/nodeping"
+      source  = "ahmedbodi/nodeping"
       version = "~> 0.2"
     }
   }
