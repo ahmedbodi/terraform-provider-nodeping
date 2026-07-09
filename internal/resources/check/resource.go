@@ -546,6 +546,14 @@ func (r *CheckResource) buildCreateRequest(ctx context.Context, plan *CheckResou
 		req.SNMPCom = plan.SNMPCom.ValueString()
 	}
 
+	if !plan.VerifyVolume.IsNull() {
+		req.VerifyVolume = plan.VerifyVolume.ValueBool()
+	}
+
+	if !plan.VolumeMin.IsNull() {
+		req.VolumeMin = int(plan.VolumeMin.ValueInt64())
+	}
+
 	if len(plan.Notifications) > 0 {
 		for _, n := range plan.Notifications {
 			notif := map[string]interface{}{
@@ -714,6 +722,18 @@ func (r *CheckResource) mapCheckToModel(ctx context.Context, check *client.Check
 		model.ServerName = types.StringValue(check.Parameters.ServerName)
 	} else {
 		model.ServerName = types.StringNull()
+	}
+
+	if check.Parameters.VerifyVolume != nil {
+		model.VerifyVolume = types.BoolValue(parseBoolInterface(check.Parameters.VerifyVolume))
+	} else {
+		model.VerifyVolume = types.BoolNull()
+	}
+
+	if volumeMin, ok := check.Parameters.VolumeMin.(float64); ok {
+		model.VolumeMin = types.Int64Value(int64(volumeMin))
+	} else {
+		model.VolumeMin = types.Int64Null()
 	}
 
 	if warningDays, ok := check.Parameters.WarningDays.(float64); ok {
