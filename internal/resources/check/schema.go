@@ -73,6 +73,8 @@ type CheckResourceModel struct {
 	ClientCert     types.String        `tfsdk:"clientcert"`
 	SNMPv          types.String        `tfsdk:"snmpv"`
 	SNMPCom        types.String        `tfsdk:"snmpcom"`
+	VerifyVolume   types.Bool          `tfsdk:"verifyvolume"`
+	VolumeMin      types.Int64         `tfsdk:"volumemin"`
 }
 
 type NotificationModel struct {
@@ -134,6 +136,20 @@ resource "nodeping_check" "ssl" {
 
   warningdays = 30
   servername  = "example.com"
+}
+` + "```" + `
+
+### Audio Stream Check
+
+` + "```hcl" + `
+resource "nodeping_check" "audio" {
+  type    = "AUDIO"
+  target  = "https://example.com/stream.mp3"
+  label   = "Audio Stream"
+  enabled = true
+
+  verifyvolume = true
+  volumemin    = -40
 }
 ` + "```" + `
 
@@ -406,6 +422,17 @@ terraform import nodeping_check.example 201205050153W2Q4C-0J2HSIRF
 			"snmpcom": schema.StringAttribute{
 				Description: "SNMP community string.",
 				Optional:    true,
+			},
+			"verifyvolume": schema.BoolAttribute{
+				Description: "Enable the volume detection feature (AUDIO check only).",
+				Optional:    true,
+			},
+			"volumemin": schema.Int64Attribute{
+				Description: "Minimum acceptable volume threshold in dB, used by the volume detection feature (AUDIO check only). Range: -90 to 0.",
+				Optional:    true,
+				Validators: []validator.Int64{
+					int64validator.Between(-90, 0),
+				},
 			},
 		},
 		Blocks: map[string]schema.Block{
