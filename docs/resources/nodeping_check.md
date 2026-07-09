@@ -106,6 +106,20 @@ resource "nodeping_check" "smtp" {
 }
 ```
 
+### Audio Stream Check
+
+```hcl
+resource "nodeping_check" "audio" {
+  type    = "AUDIO"
+  target  = "https://example.com/stream.mp3"
+  label   = "Audio Stream"
+  enabled = true
+
+  verifyvolume = true
+  volumemin    = -40
+}
+```
+
 ### Check with Notifications
 
 ```hcl
@@ -236,6 +250,11 @@ resource "nodeping_check" "service" {
 
 - `snmpv` - (Optional) SNMP version: `1`, `2c`.
 - `snmpcom` - (Optional) SNMP community string.
+
+### Audio Arguments
+
+- `verifyvolume` - (Optional) Enable the volume detection feature. `AUDIO` checks only.
+- `volumemin` - (Optional) Minimum acceptable volume threshold in dB, used by the volume detection feature. Range: `-90` to `0`. `AUDIO` checks only.
 
 ## Attribute Reference
 
