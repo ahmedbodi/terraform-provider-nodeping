@@ -297,14 +297,16 @@ func (r *CheckResource) ModifyPlan(ctx context.Context, req resource.ModifyPlanR
 		return
 	}
 
-	defaultTags := r.client.GetDefaultTags()
-	if len(defaultTags) == 0 {
-		return
-	}
-
 	var plan CheckResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	defaultTags := r.client.GetDefaultTags()
+
+	// Nothing to merge in, and tags is already a known value - leave as-is.
+	if len(defaultTags) == 0 && !plan.Tags.IsUnknown() {
 		return
 	}
 
@@ -397,7 +399,7 @@ func (r *CheckResource) buildCreateRequest(ctx context.Context, plan *CheckResou
 		req.AutoDiag = plan.AutoDiag.ValueBool()
 	}
 
-	if !plan.RunLocations.IsNull() {
+	if !plan.RunLocations.IsNull() && !plan.RunLocations.IsUnknown() {
 		var locations []string
 		diags.Append(plan.RunLocations.ElementsAs(ctx, &locations, false)...)
 		if len(locations) > 0 {
@@ -410,7 +412,7 @@ func (r *CheckResource) buildCreateRequest(ctx context.Context, plan *CheckResou
 	}
 
 	// Tags are already merged with default_tags in ModifyPlan
-	if !plan.Tags.IsNull() {
+	if !plan.Tags.IsNull() && !plan.Tags.IsUnknown() {
 		var tags []string
 		diags.Append(plan.Tags.ElementsAs(ctx, &tags, false)...)
 		req.Tags = tags
@@ -440,13 +442,13 @@ func (r *CheckResource) buildCreateRequest(ctx context.Context, plan *CheckResou
 		req.StatusCode = int(plan.StatusCode.ValueInt64())
 	}
 
-	if !plan.SendHeaders.IsNull() {
+	if !plan.SendHeaders.IsNull() && !plan.SendHeaders.IsUnknown() {
 		headers := make(map[string]string)
 		diags.Append(plan.SendHeaders.ElementsAs(ctx, &headers, false)...)
 		req.SendHeaders = headers
 	}
 
-	if !plan.ReceiveHeaders.IsNull() {
+	if !plan.ReceiveHeaders.IsNull() && !plan.ReceiveHeaders.IsUnknown() {
 		headers := make(map[string]string)
 		diags.Append(plan.ReceiveHeaders.ElementsAs(ctx, &headers, false)...)
 		req.ReceiveHeaders = headers
