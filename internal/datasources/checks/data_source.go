@@ -172,7 +172,7 @@ func (d *ChecksDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 			Type:       types.StringValue(check.Type),
 			Target:     types.StringValue(check.Parameters.Target),
 			Label:      types.StringValue(check.Label),
-			Enabled:    types.BoolValue(check.Enabled == "active"),
+			Enabled:    types.BoolValue(check.Enabled == "active" || check.Enabled == "true"),
 			State:      types.Int64Value(int64(check.State)),
 		}
 

@@ -571,7 +571,7 @@ func (r *CheckResource) mapCheckToModel(ctx context.Context, check *client.Check
 	model.Type = types.StringValue(check.Type)
 	model.Label = types.StringValue(check.Label)
 
-	if check.Enabled == "active" {
+	if check.Enabled == "active" || check.Enabled == "true" {
 		model.Enabled = types.BoolValue(true)
 	} else {
 		model.Enabled = types.BoolValue(false)
@@ -779,11 +779,12 @@ func (r *CheckResource) mapCheckToModel(ctx context.Context, check *client.Check
 		model.ClientCert = types.StringNull()
 	}
 
+	previousNotifications := model.Notifications
 	if len(check.Notifications) > 0 {
 		model.Notifications = make([]NotificationModel, 0, len(check.Notifications))
 		// Track seen notifications to avoid duplicates
 		seen := make(map[string]bool)
-		for _, n := range check.Notifications {
+		for i, n := range check.Notifications {
 			for contactID, config := range n {
 				if configMap, ok := config.(map[string]interface{}); ok {
 					var delay int64
@@ -794,6 +795,14 @@ func (r *CheckResource) mapCheckToModel(ctx context.Context, check *client.Check
 					if s, ok := configMap["schedule"].(string); ok {
 						schedule = s
 					}
+
+					// NodePing echoes back a contact group's name rather than its ID
+					// in the notifications map key. Fall back to the previously known
+					// contact_id at the same position to avoid a spurious diff/crash.
+					if !isNodePingID(contactID) && i < len(previousNotifications) {
+						contactID = previousNotifications[i].ContactID.ValueString()
+					}
+
 					// Create unique key for deduplication
 					key := fmt.Sprintf("%s:%d:%s", contactID, delay, schedule)
 					if seen[key] {
@@ -813,6 +822,12 @@ func (r *CheckResource) mapCheckToModel(ctx context.Context, check *client.Check
 	} else {
 		model.Notifications = nil
 	}
+}
+
+// isNodePingID reports whether s looks like a NodePing object ID (which always
+// starts with a numeric timestamp prefix), as opposed to a human-readable name.
+func isNodePingID(s string) bool {
+	return len(s) > 0 && s[0] >= '0' && s[0] <= '9'
 }
 
 func normalizeURL(u string) string {

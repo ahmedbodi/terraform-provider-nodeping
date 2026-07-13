@@ -175,7 +175,7 @@ func (d *CheckDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 	config.Type = types.StringValue(check.Type)
 	config.Target = types.StringValue(check.Parameters.Target)
 	config.Label = types.StringValue(check.Label)
-	config.Enabled = types.BoolValue(check.Enabled == "active")
+	config.Enabled = types.BoolValue(check.Enabled == "active" || check.Enabled == "true")
 	config.Public = types.BoolValue(check.Public)
 
 	if interval, err := check.Interval.Float64(); err == nil {
