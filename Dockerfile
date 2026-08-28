@@ -13,7 +13,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -o terraform-provider-node
 
 # Pin the runtime base image instead of tracking :latest, so a rebuild cannot
 # silently pick up a different distro release (Trivy DS-0001).
-FROM alpine:3.22 AS runtime
+FROM alpine:3.24 AS runtime
 RUN apk add --no-cache ca-certificates
 
 # Run as an unprivileged user (Trivy DS-0002).
