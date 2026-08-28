@@ -1,14 +1,16 @@
 # Terraform Provider for NodePing
 
-[![Go Version](https://img.shields.io/badge/Go-1.25-blue.svg)](https://golang.org/)
-[![Terraform](https://img.shields.io/badge/Terraform-1.14+-purple.svg)](https://www.terraform.io/)
-[![License](https://img.shields.io/badge/License-MPL--2.0-green.svg)](LICENSE)
+[![Tests](https://github.com/phizzl/terraform-provider-nodeping/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/phizzl/terraform-provider-nodeping/actions/workflows/test.yml)
+[![Security](https://github.com/phizzl/terraform-provider-nodeping/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/phizzl/terraform-provider-nodeping/actions/workflows/security.yml)
+
+[![Terraform Registry](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fregistry.terraform.io%2Fv1%2Fproviders%2Fphizzl%2Fnodeping&query=%24.version&label=terraform%20registry&color=844FBA&logo=terraform)](https://registry.terraform.io/providers/phizzl/nodeping/latest)
+[![Downloads](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fregistry.terraform.io%2Fv1%2Fproviders%2Fphizzl%2Fnodeping&query=%24.downloads&label=downloads&color=844FBA&logo=terraform)](https://registry.terraform.io/providers/phizzl/nodeping/latest)
+[![Go](https://img.shields.io/github/go-mod/go-version/phizzl/terraform-provider-nodeping?logo=go)](go.mod)
+[![Terraform](https://img.shields.io/badge/Terraform-1.14+-purple.svg?logo=terraform)](https://www.terraform.io/)
+[![License](https://img.shields.io/github/license/phizzl/terraform-provider-nodeping?color=green)](LICENSE)
 [![ko-fi](https://img.shields.io/badge/Ko--fi-Support%20this%20project-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/phizzl)
 
 A Terraform provider for managing [NodePing](https://nodeping.com/) monitoring resources.
-
-**Timestamp**: 2026-01-27T08:33:00Z  
-**Meta-prompt version**: v3.8
 
 ## Features
 
@@ -417,7 +419,12 @@ If this provider saves you time, you can support its development on Ko-fi:
 
 | Component | Version |
 |-----------|---------|
-| Go | 1.25 |
-| Terraform CLI | 1.14 |
-| terraform-plugin-framework | latest compatible |
-| terraform-plugin-testing | latest compatible |
+| Go | 1.25.8 |
+| Terraform CLI (minimum) | 1.14 |
+| terraform-plugin-framework | v1.19.0 |
+| terraform-plugin-framework-validators | v0.19.0 |
+| terraform-plugin-testing | v1.16.0 |
+
+These are the versions the CI builds and tests against. The `Go` and
+`terraform-plugin-*` versions come from `go.mod`; the badge at the top of this
+file reads the Go version live, so it cannot drift out of date.
