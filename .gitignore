@@ -15,6 +15,10 @@ go.work.sum
 # Terraform
 *.tfstate
 *.tfstate.*
+*.tfplan
+*.tfplan.*
+plan.json
+tfplan
 .terraform/
 .terraform.lock.hcl
 crash.log
