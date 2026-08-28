@@ -75,7 +75,7 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage
@@ -96,7 +96,7 @@ jobs:
       # The acceptance tests drive a real terraform binary against an
       # in-process mock of the NodePing API. No credentials and no network
       # calls to nodeping.com are involved, so this is safe to run on every PR.
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
           terraform_wrapper: false
