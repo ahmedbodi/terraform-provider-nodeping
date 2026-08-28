@@ -16,7 +16,7 @@ This document describes the architecture for the Terraform Provider for NodePing
 - Contacts + Checks resources
 - Environment variable auth fallback
 - Target scale: ~50 resources per type
-- GitLab CE repository
+- GitHub repository
 
 ### Pinned Versions
 | Component | Version |
@@ -34,8 +34,7 @@ This document describes the architecture for the Terraform Provider for NodePing
 
 ```
 terraform-provider-nodeping/
-├── .github/                      # (optional) GitHub Actions if mirrored
-├── .gitlab-ci.yml                # GitLab CI/CD pipeline
+├── .github/workflows/            # CI: test, security, release
 ├── .gitignore
 ├── .env.example                  # Example environment variables
 ├── CODEOWNERS

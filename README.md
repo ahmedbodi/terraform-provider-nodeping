@@ -44,7 +44,7 @@ terraform {
 ### Building from Source
 
 ```bash
-git clone https://gitlab.com/your-org/terraform-provider-nodeping.git
+git clone https://github.com/phizzl/terraform-provider-nodeping.git
 cd terraform-provider-nodeping
 go build -o terraform-provider-nodeping
 ```

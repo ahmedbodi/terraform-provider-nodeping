@@ -171,13 +171,10 @@
 
 ## CI/CD Setup
 
-### GitLab CI (`.gitlab-ci.yml`)
-- [ ] Lint stage (golangci-lint)
-- [ ] Security stage (gosec)
-- [ ] Test stage (unit + acceptance)
-- [ ] Build stage
-- [ ] SBOM generation
-- [ ] Release stage (tags)
+### GitHub Actions (`.github/workflows/`)
+- [x] `test.yml` - build/vet/gofmt, unit tests with race + coverage, acceptance tests
+- [x] `security.yml` - gitleaks secret detection, Trivy vuln/misconfig/secret scanning
+- [x] `release.yml` - goreleaser on tag push
 
 ### Repository Setup
 - [ ] CODEOWNERS
