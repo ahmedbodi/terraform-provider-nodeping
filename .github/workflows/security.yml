@@ -59,6 +59,25 @@ jobs:
           sarif_file: gitleaks.sarif
           category: gitleaks
 
+  # Trivy flags a Go module as soon as any advisory mentions it, even when the
+  # affected package is never imported. govulncheck resolves that at symbol
+  # level, so it is the authoritative signal for Go dependencies here.
+  govulncheck:
+    name: govulncheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27'
+          cache: true
+
+      - name: Run govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
   trivy:
     name: Trivy (vulnerabilities, misconfig, secrets)
     runs-on: ubuntu-latest

@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GO_VERSION: '1.25'
+  GO_VERSION: '1.27'
   TERRAFORM_VERSION: '1.14.9'
 
 jobs:
@@ -50,6 +50,11 @@ jobs:
         run: |
           go mod tidy
           git diff --exit-code -- go.mod go.sum
+
+      # Dependabot can only edit manifests, never the README. This turns a
+      # stale version table into a failing check instead of silent drift.
+      - name: README version table is current
+        run: ./scripts/sync-readme-versions.sh --check
 
   unit:
     name: Unit tests

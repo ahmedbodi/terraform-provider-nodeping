@@ -1,7 +1,7 @@
-.PHONY: build test test-unit test-acceptance test-coverage lint clean docker-build docker-test docker-tidy
+.PHONY: build test test-unit test-acceptance test-coverage docs lint clean docker-build docker-test docker-tidy
 
 DOCKER_IMAGE := terraform-provider-nodeping
-GO_VERSION := 1.25
+GO_VERSION := 1.27
 
 build:
 	docker run --rm -v $(PWD):/app -w /app golang:$(GO_VERSION)-alpine sh -c "go mod tidy && CGO_ENABLED=0 go build -o terraform-provider-nodeping ."
@@ -18,6 +18,10 @@ test-unit:
 test-acceptance:
 	docker build --target test -t $(DOCKER_IMAGE):test .
 	docker run --rm -e TF_ACC=1 $(DOCKER_IMAGE):test go test -v -timeout 20m -run "TestAcc" ./...
+
+# Regenerate the README version table from go.mod and the Dockerfile.
+docs:
+	./scripts/sync-readme-versions.sh
 
 test-coverage:
 	docker run --rm -v $(PWD):/app -w /app golang:$(GO_VERSION)-alpine sh -c "\
@@ -52,6 +56,7 @@ help:
 	@echo "  test-unit   - Run unit tests only using Docker"
 	@echo "  test-acceptance - Run terraform acceptance tests against the API mock"
 	@echo "  test-coverage   - Run tests and print total coverage"
+	@echo "  docs        - Regenerate the README version table"
 	@echo "  tidy        - Run go mod tidy using Docker"
 	@echo "  lint        - Run golangci-lint using Docker"
 	@echo "  fmt         - Format Go code using Docker"
