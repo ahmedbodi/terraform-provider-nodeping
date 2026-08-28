@@ -57,6 +57,36 @@ func TestCheckSchemaCoreAttributes(t *testing.T) {
 		}
 	}
 
+	// AUDIO check arguments. Per the NodePing API these are
+	// "verifyvolume - optional boolean" and "volumemin - optional integer
+	// (acceptable range -90 to 0)".
+	for _, name := range []string{"verifyvolume", "volumemin"} {
+		attr, ok := attrs[name]
+		if !ok {
+			t.Errorf("schema is missing the %q attribute", name)
+			continue
+		}
+		if !attr.IsOptional() {
+			t.Errorf("%q must be Optional, it only applies to AUDIO checks", name)
+		}
+		if attr.IsRequired() {
+			t.Errorf("%q must not be Required", name)
+		}
+	}
+
+	// AUDIO has to be an accepted check type, otherwise the documented
+	// example config would be rejected by the type validator.
+	audio := false
+	for _, ct := range ValidCheckTypes {
+		if ct == "AUDIO" {
+			audio = true
+			break
+		}
+	}
+	if !audio {
+		t.Error("AUDIO is missing from ValidCheckTypes, so verifyvolume/volumemin are unreachable")
+	}
+
 	// Check-type specific arguments must stay Optional: they only apply to a
 	// subset of the 30+ NodePing check types.
 	for _, name := range []string{"port", "snmpv", "snmpcom", "contentstring", "statuscode"} {

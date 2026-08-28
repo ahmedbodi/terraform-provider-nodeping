@@ -138,6 +138,34 @@ func (m *MockNodePingServer) handleContact(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// The NodePing API takes check-type specific arguments at the top level of a
+// create/update request but returns them nested under "parameters". Everything
+// that is not one of the fields living at the top level of a check response is
+// therefore echoed back as a parameter. Hard-coding a handful of them, as this
+// mock did originally, made any acceptance test for the other attributes fail
+// with "provider produced inconsistent result after apply" even though the
+// provider was correct.
+var checkTopLevelFields = []string{
+	"type", "label", "enabled", "interval", "notifications", "dep", "mute",
+	"description", "tags", "runlocations", "homeloc", "autodiag", "public",
+}
+
+func checkParametersFrom(req map[string]interface{}) map[string]interface{} {
+	skip := make(map[string]bool, len(checkTopLevelFields))
+	for _, k := range checkTopLevelFields {
+		skip[k] = true
+	}
+
+	params := make(map[string]interface{}, len(req))
+	for k, v := range req {
+		if skip[k] {
+			continue
+		}
+		params[k] = v
+	}
+	return params
+}
+
 func (m *MockNodePingServer) handleChecks(w http.ResponseWriter, r *http.Request) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -165,11 +193,12 @@ func (m *MockNodePingServer) handleChecks(w http.ResponseWriter, r *http.Request
 			"state":       1,
 			"created":     1609459200000,
 			"modified":    1609459200000,
-			"parameters": map[string]interface{}{
-				"target":    req["target"],
-				"threshold": req["threshold"],
-				"sens":      req["sens"],
-			},
+			"parameters":  checkParametersFrom(req),
+		}
+		for _, k := range checkTopLevelFields {
+			if v, ok := req[k]; ok {
+				check[k] = v
+			}
 		}
 
 		m.checks[id] = check
@@ -216,6 +245,19 @@ func (m *MockNodePingServer) handleCheck(w http.ResponseWriter, r *http.Request)
 		if enabled, ok := req["enabled"]; ok {
 			check["enable"] = enabled
 		}
+		if interval, ok := req["interval"]; ok {
+			check["interval"] = interval
+		}
+		for _, k := range checkTopLevelFields {
+			if v, ok := req[k]; ok {
+				check[k] = v
+			}
+		}
+		// The real API replaces the stored parameters with what the update
+		// sends, so an attribute removed from the config disappears from the
+		// response too. Mirroring that is what makes update round-trips
+		// meaningful to test.
+		check["parameters"] = checkParametersFrom(req)
 
 		m.checks[id] = check
 		w.Header().Set("Content-Type", "application/json")

@@ -224,6 +224,27 @@ func TestAccCheckResource_rejectsInvalidValues(t *testing.T) {
 			wantErrRex: regexp.MustCompile(`(?is)warningdays`),
 		},
 		{
+			// NodePing documents the acceptable range as -90 to 0.
+			name: "volumemin below the documented range",
+			body: `
+  type         = "AUDIO"
+  target       = "https://example.com/stream.mp3"
+  verifyvolume = true
+  volumemin    = -91
+`,
+			wantErrRex: regexp.MustCompile(`(?is)volumemin`),
+		},
+		{
+			name: "volumemin above the documented range",
+			body: `
+  type         = "AUDIO"
+  target       = "https://example.com/stream.mp3"
+  verifyvolume = true
+  volumemin    = 1
+`,
+			wantErrRex: regexp.MustCompile(`(?is)volumemin`),
+		},
+		{
 			name: "unsupported snmp version",
 			body: `
   type   = "SNMP"
@@ -329,6 +350,43 @@ resource "nodeping_check" "no_tags" {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet("nodeping_check.no_tags", "id"),
 				),
+			},
+		},
+	})
+}
+
+// AUDIO checks with volume detection. Per the NodePing API, verifyvolume is an
+// "optional boolean to enable the volume detection feature" and volumemin an
+// "optional integer (acceptable range -90 to 0)".
+func TestAccCheckResource_audioVolumeDetection(t *testing.T) {
+	mock := testutil.NewMockNodePingServer()
+	t.Cleanup(mock.Close)
+
+	config := providerConfig(mock.URL()) + `
+resource "nodeping_check" "audio" {
+  type   = "AUDIO"
+  target = "https://example.com/stream.mp3"
+  label  = "acc-audio"
+
+  verifyvolume = true
+  volumemin    = -40
+}
+`
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: protoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+			{
+				Config: config,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("nodeping_check.audio", "type", "AUDIO"),
+					resource.TestCheckResourceAttr("nodeping_check.audio", "verifyvolume", "true"),
+					resource.TestCheckResourceAttr("nodeping_check.audio", "volumemin", "-40"),
+				),
+			},
+			{
+				Config:   config,
+				PlanOnly: true,
 			},
 		},
 	})
