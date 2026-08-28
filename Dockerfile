@@ -1,4 +1,4 @@
-FROM golang:1.25-alpine AS builder
+FROM golang:1.27-alpine AS builder
 
 RUN apk add --no-cache git
 
@@ -33,7 +33,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
 
 ENTRYPOINT ["./terraform-provider-nodeping"]
 
-FROM golang:1.25-alpine AS test
+FROM golang:1.27-alpine AS test
 # build-base supplies the C toolchain the race detector needs.
 RUN apk add --no-cache git build-base
 # The acceptance tests drive a real terraform binary. Taking it from the
