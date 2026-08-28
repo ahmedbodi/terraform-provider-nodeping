@@ -1,0 +1,69 @@
+version: 2
+
+updates:
+  # Go modules. Most findings in this repo have come from transitive
+  # dependencies of terraform-plugin-framework, so security updates matter more
+  # than feature bumps here.
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: deps
+    labels:
+      - dependencies
+      - go
+    groups:
+      # One PR for the routine bumps, so the queue stays readable. Major
+      # versions stay separate because they need a real review.
+      go-minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+      # Security fixes are grouped separately so they are obvious at a glance.
+      go-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  # The Node 20 deprecation showed how easily action versions go stale.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: ci
+    labels:
+      - dependencies
+      - github-actions
+    groups:
+      actions:
+        applies-to: version-updates
+        update-types:
+          - minor
+          - patch
+
+  # The Dockerfile pins golang, alpine and the terraform image it copies the
+  # binary from. Without this they silently rot.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: build
+    labels:
+      - dependencies
+      - docker
