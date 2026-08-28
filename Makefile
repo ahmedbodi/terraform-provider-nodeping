@@ -1,7 +1,7 @@
 .PHONY: build test lint clean docker-build docker-test docker-tidy
 
 DOCKER_IMAGE := terraform-provider-nodeping
-GO_VERSION := 1.23
+GO_VERSION := 1.25
 
 build:
 	docker run --rm -v $(PWD):/app -w /app golang:$(GO_VERSION)-alpine sh -c "go mod tidy && CGO_ENABLED=0 go build -o terraform-provider-nodeping ."

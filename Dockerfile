@@ -1,28 +1,42 @@
-FROM golang:1.23-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 RUN apk add --no-cache git
 
 WORKDIR /app
 
-COPY go.mod ./
-RUN go mod download || true
+COPY go.mod go.sum ./
+RUN go mod download
 
 COPY . .
 
-RUN go mod tidy
-RUN CGO_ENABLED=0 GOOS=linux go build -o terraform-provider-nodeping .
+RUN CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -o terraform-provider-nodeping .
 
-FROM alpine:latest AS runtime
+# Pin the runtime base image instead of tracking :latest, so a rebuild cannot
+# silently pick up a different distro release (Trivy DS-0001).
+FROM alpine:3.22 AS runtime
 RUN apk add --no-cache ca-certificates
+
+# Run as an unprivileged user (Trivy DS-0002).
+RUN addgroup -S -g 10001 provider \
+ && adduser -S -u 10001 -G provider -h /app provider
+
 WORKDIR /app
 COPY --from=builder /app/terraform-provider-nodeping .
+
+USER 10001:10001
+
+# Terraform plugins speak gRPC over stdio and are started by Terraform core, so
+# there is no endpoint to poll. Verifying that the binary is executable is the
+# only meaningful liveness signal (Trivy DS-0026).
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD ["/app/terraform-provider-nodeping", "--help"]
+
 ENTRYPOINT ["./terraform-provider-nodeping"]
 
-FROM golang:1.23-alpine AS test
+FROM golang:1.25-alpine AS test
 RUN apk add --no-cache git
 WORKDIR /app
-COPY go.mod ./
-RUN go mod download || true
+COPY go.mod go.sum ./
+RUN go mod download
 COPY . .
-RUN go mod tidy
 CMD ["go", "test", "-v", "./..."]

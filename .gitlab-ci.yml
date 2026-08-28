@@ -6,7 +6,7 @@ stages:
   - release
 
 variables:
-  GO_VERSION: "1.23"
+  GO_VERSION: "1.25"
   GOLANGCI_LINT_VERSION: "v1.62.0"
   GOSEC_VERSION: "v2.21.0"
   GITLEAKS_VERSION: "v8.30.1"

@@ -14,10 +14,10 @@ import (
 )
 
 var (
-	_ resource.Resource                   = &CheckResource{}
-	_ resource.ResourceWithConfigure      = &CheckResource{}
-	_ resource.ResourceWithImportState    = &CheckResource{}
-	_ resource.ResourceWithModifyPlan     = &CheckResource{}
+	_ resource.Resource                = &CheckResource{}
+	_ resource.ResourceWithConfigure   = &CheckResource{}
+	_ resource.ResourceWithImportState = &CheckResource{}
+	_ resource.ResourceWithModifyPlan  = &CheckResource{}
 )
 
 type CheckResource struct {

@@ -1,54 +1,17 @@
 # Trivy exceptions.
 #
-# Every entry MUST carry an `expired_at` date. Once that date passes the finding
-# starts failing the pipeline again, so exceptions cannot silently become
-# permanent. Fix the underlying issue and delete the entry rather than extending
-# the date.
+# Currently empty on purpose: there are no accepted findings.
 #
-# NOTE: there are deliberately NO entries under `secrets:`. Secret findings are
-# always blocking — that is the whole point of this pipeline.
-
-vulnerabilities:
-  # Transitive dependencies pulled in via terraform-plugin-framework / grpc.
-  # All three have fixed releases available; they need a coordinated
-  # `go get -u` + `go mod tidy` and a regression test run.
-  #   golang.org/x/net    v0.39.0 -> 0.56.0
-  #   golang.org/x/text   v0.24.0 -> 0.39.0
-  #   google.golang.org/grpc v1.72.1 -> 1.82.1
-  - id: CVE-2026-25681
-    statement: "golang.org/x/net - pending dependency bump"
-    expired_at: 2026-10-31
-  - id: CVE-2026-27136
-    statement: "golang.org/x/net html XSS - pending dependency bump"
-    expired_at: 2026-10-31
-  - id: CVE-2026-33814
-    statement: "golang.org/x/net HTTP/2 DoS - pending dependency bump"
-    expired_at: 2026-10-31
-  - id: CVE-2026-39821
-    statement: "golang.org/x/net idna - pending dependency bump"
-    expired_at: 2026-10-31
-  - id: CVE-2026-46600
-    statement: "golang.org/x/net dnsmessage DoS - pending dependency bump"
-    expired_at: 2026-10-31
-  - id: CVE-2026-56852
-    statement: "golang.org/x/text DoS - pending dependency bump"
-    expired_at: 2026-10-31
-  - id: CVE-2026-33186
-    statement: "grpc-go authz bypass - not reachable, provider is a gRPC server for Terraform core only; pending bump"
-    expired_at: 2026-10-31
-  - id: GHSA-hrxh-6v49-42gf
-    statement: "grpc-go xDS RBAC - xDS is not used by this provider; pending bump"
-    expired_at: 2026-10-31
-
-misconfigurations:
-  # Dockerfile is a local build/test helper, not a shipped artifact. The
-  # published provider is a static binary produced by goreleaser.
-  - id: AVD-DS-0001
-    statement: "Dockerfile uses alpine:latest - local dev image only"
-    expired_at: 2026-10-31
-  - id: AVD-DS-0002
-    statement: "Dockerfile runs as root - local dev image only, not published"
-    expired_at: 2026-10-31
-  - id: AVD-DS-0026
-    statement: "No HEALTHCHECK - image is not run as a long-lived service"
-    expired_at: 2026-10-31
+# If an entry ever becomes necessary, it MUST carry an `expired_at` date so the
+# suppression cannot silently become permanent — once the date passes the
+# finding starts failing the pipeline again. Fix the underlying issue and delete
+# the entry rather than extending the date.
+#
+# Never add anything under `secrets:`. Secret findings are always blocking.
+#
+# Example:
+#
+# vulnerabilities:
+#   - id: CVE-0000-00000
+#     statement: "why this is accepted, and what unblocks it"
+#     expired_at: 2026-12-31
