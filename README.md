@@ -3,6 +3,7 @@
 [![Go Version](https://img.shields.io/badge/Go-1.25-blue.svg)](https://golang.org/)
 [![Terraform](https://img.shields.io/badge/Terraform-1.14+-purple.svg)](https://www.terraform.io/)
 [![License](https://img.shields.io/badge/License-MPL--2.0-green.svg)](LICENSE)
+[![ko-fi](https://img.shields.io/badge/Ko--fi-Support%20this%20project-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/phizzl)
 
 A Terraform provider for managing [NodePing](https://nodeping.com/) monitoring resources.
 
@@ -395,7 +396,7 @@ gosec ./...
 2. Create a feature branch
 3. Make your changes
 4. Run tests and linting
-5. Submit a merge request
+5. Submit a pull request
 
 ## License
 
@@ -405,7 +406,12 @@ This project is licensed under the Mozilla Public License 2.0 - see the [LICENSE
 
 - [NodePing Documentation](https://nodeping.com/documentation.html)
 - [NodePing API Reference](https://nodeping.com/docs-api-overview.html)
-- [Issue Tracker](https://gitlab.com/your-org/terraform-provider-nodeping/-/issues)
+- [Issue Tracker](https://github.com/phizzl/terraform-provider-nodeping/issues)
+- [Source Repository](https://github.com/phizzl/terraform-provider-nodeping)
+
+If this provider saves you time, you can support its development on Ko-fi:
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/phizzl)
 
 ## Pinned Versions
 

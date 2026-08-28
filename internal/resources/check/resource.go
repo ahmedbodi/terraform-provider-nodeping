@@ -353,7 +353,10 @@ func (r *CheckResource) buildCreateRequest(ctx context.Context, plan *CheckResou
 		Target: plan.Target.ValueString(),
 	}
 
-	if !plan.Label.IsNull() {
+	// Optional+Computed attributes are unknown during plan when the user does
+	// not set them. Sending the zero value would overwrite whatever the API
+	// would otherwise pick, so skip them entirely.
+	if !plan.Label.IsNull() && !plan.Label.IsUnknown() {
 		req.Label = plan.Label.ValueString()
 	}
 
@@ -397,7 +400,7 @@ func (r *CheckResource) buildCreateRequest(ctx context.Context, plan *CheckResou
 		req.AutoDiag = plan.AutoDiag.ValueBool()
 	}
 
-	if !plan.RunLocations.IsNull() {
+	if !plan.RunLocations.IsNull() && !plan.RunLocations.IsUnknown() {
 		var locations []string
 		diags.Append(plan.RunLocations.ElementsAs(ctx, &locations, false)...)
 		if len(locations) > 0 {
@@ -409,8 +412,11 @@ func (r *CheckResource) buildCreateRequest(ctx context.Context, plan *CheckResou
 		req.HomeLoc = plan.HomeLoc.ValueString()
 	}
 
-	// Tags are already merged with default_tags in ModifyPlan
-	if !plan.Tags.IsNull() {
+	// Tags are merged with default_tags in ModifyPlan, but ModifyPlan returns
+	// early when the provider has no default_tags configured. In that case tags
+	// stays unknown (it is Optional+Computed), and ElementsAs cannot convert an
+	// unknown value into []string -- it fails the apply outright.
+	if !plan.Tags.IsNull() && !plan.Tags.IsUnknown() {
 		var tags []string
 		diags.Append(plan.Tags.ElementsAs(ctx, &tags, false)...)
 		req.Tags = tags

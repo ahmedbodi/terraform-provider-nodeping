@@ -11,6 +11,7 @@ variables:
   GOSEC_VERSION: "v2.21.0"
   GITLEAKS_VERSION: "v8.30.1"
   TRIVY_VERSION: "0.74.0"
+  TERRAFORM_VERSION: "1.14.9"
 
 .go-cache:
   variables:
@@ -133,7 +134,7 @@ unit-test:
   image: golang:${GO_VERSION}
   extends: .go-cache
   script:
-    - go test -v -race -coverprofile=coverage.out ./...
+    - go test -v -race -coverprofile=coverage.out -coverpkg=./... ./...
     - go tool cover -func=coverage.out
   coverage: '/total:\s+\(statements\)\s+(\d+\.\d+)%/'
   artifacts:
@@ -148,20 +149,26 @@ unit-test:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
+# Acceptance tests drive a real terraform binary against an in-process mock of
+# the NodePing API. They need no credentials and make no calls to nodeping.com,
+# so unlike the previous manual job they can run on every pipeline.
 acceptance-test:
   stage: test
   image: golang:${GO_VERSION}
   extends: .go-cache
   variables:
     TF_ACC: "1"
+    TF_ACC_TERRAFORM_PATH: /usr/local/bin/terraform
+  before_script:
+    - curl -fsSL -o /tmp/tf.zip "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip"
+    - unzip -q -o /tmp/tf.zip -d /usr/local/bin
+    - terraform version
   script:
-    - go test -v -timeout 30m ./...
+    - go test -v -timeout 20m -run 'TestAcc' ./...
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      when: manual
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      when: manual
-  allow_failure: true
+    - if: $CI_COMMIT_TAG
 
 build:
   stage: build

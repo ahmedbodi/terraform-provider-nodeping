@@ -1,4 +1,4 @@
-.PHONY: build test lint clean docker-build docker-test docker-tidy
+.PHONY: build test test-unit test-acceptance test-coverage lint clean docker-build docker-test docker-tidy
 
 DOCKER_IMAGE := terraform-provider-nodeping
 GO_VERSION := 1.25
@@ -10,7 +10,19 @@ test:
 	docker run --rm -v $(PWD):/app -w /app --env-file .env golang:$(GO_VERSION)-alpine sh -c "go mod tidy && go test -v ./..."
 
 test-unit:
-	docker run --rm -v $(PWD):/app -w /app golang:$(GO_VERSION)-alpine sh -c "go mod tidy && go test -v ./internal/client/..."
+	docker run --rm -v $(PWD):/app -w /app golang:$(GO_VERSION)-alpine sh -c "go mod tidy && go test -v ./..."
+
+# Acceptance tests drive a real terraform binary against an in-process mock of
+# the NodePing API. The test image ships a pinned terraform, so no credentials
+# and no calls to nodeping.com are involved.
+test-acceptance:
+	docker build --target test -t $(DOCKER_IMAGE):test .
+	docker run --rm -e TF_ACC=1 $(DOCKER_IMAGE):test go test -v -timeout 20m -run "TestAcc" ./...
+
+test-coverage:
+	docker run --rm -v $(PWD):/app -w /app golang:$(GO_VERSION)-alpine sh -c "\
+		go test -coverprofile=coverage.out -coverpkg=./... ./... && \
+		go tool cover -func=coverage.out | tail -1"
 
 tidy:
 	docker run --rm -v $(PWD):/app -w /app golang:$(GO_VERSION)-alpine sh -c "go mod tidy"
@@ -38,6 +50,8 @@ help:
 	@echo "  build       - Build the provider binary using Docker"
 	@echo "  test        - Run all tests using Docker"
 	@echo "  test-unit   - Run unit tests only using Docker"
+	@echo "  test-acceptance - Run terraform acceptance tests against the API mock"
+	@echo "  test-coverage   - Run tests and print total coverage"
 	@echo "  tidy        - Run go mod tidy using Docker"
 	@echo "  lint        - Run golangci-lint using Docker"
 	@echo "  fmt         - Format Go code using Docker"
