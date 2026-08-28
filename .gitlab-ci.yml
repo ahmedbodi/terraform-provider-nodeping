@@ -9,6 +9,8 @@ variables:
   GO_VERSION: "1.23"
   GOLANGCI_LINT_VERSION: "v1.62.0"
   GOSEC_VERSION: "v2.21.0"
+  GITLEAKS_VERSION: "v8.30.1"
+  TRIVY_VERSION: "0.74.0"
 
 .go-cache:
   variables:
@@ -48,6 +50,83 @@ security:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# --- Secret detection -------------------------------------------------------
+# Blocking by design. A committed secret has to be rotated no matter how fast it
+# is reverted, so it must never reach the default branch in the first place.
+secret-detection:
+  stage: security
+  image:
+    name: zricethezav/gitleaks:${GITLEAKS_VERSION}
+    entrypoint: [""]
+  variables:
+    # Scan the whole history, not just the last 50 commits GitLab clones by
+    # default -- otherwise a secret in an older commit is invisible.
+    GIT_DEPTH: "0"
+  script:
+    # --redact keeps detected values out of the job log; without it a finding
+    # would leak the secret a second time, into CI output.
+    - |
+      gitleaks detect \
+        --source="$CI_PROJECT_DIR" \
+        --config="$CI_PROJECT_DIR/.gitleaks.toml" \
+        --report-format sarif \
+        --report-path gitleaks.sarif \
+        --redact \
+        --no-banner \
+        --exit-code 1
+  artifacts:
+    when: always
+    expire_in: 1 month
+    paths:
+      - gitleaks.sarif
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+# --- Trivy ------------------------------------------------------------------
+.trivy-base:
+  image:
+    name: aquasec/trivy:${TRIVY_VERSION}
+    entrypoint: [""]
+  variables:
+    TRIVY_NO_PROGRESS: "true"
+    TRIVY_CACHE_DIR: .trivycache/
+  cache:
+    key: trivy-db
+    paths:
+      - .trivycache/
+
+trivy-scan:
+  stage: security
+  extends: .trivy-base
+  script:
+    # Pass 1: full report, never fails -- keeps findings visible while an
+    # exception in .trivyignore.yaml is active.
+    - trivy fs --scanners vuln,secret,misconfig --exit-code 0 "$CI_PROJECT_DIR"
+    - trivy fs --scanners vuln,secret,misconfig --format json --output trivy.json --exit-code 0 "$CI_PROJECT_DIR"
+    - trivy fs --scanners vuln --format template --template "@/contrib/gitlab.tpl" --output gl-dependency-scanning-report.json --exit-code 0 "$CI_PROJECT_DIR"
+    # Pass 2: the gate. Every exception carries an expiry date, so suppressions
+    # cannot quietly become permanent.
+    - |
+      trivy fs \
+        --scanners vuln,secret,misconfig \
+        --severity HIGH,CRITICAL \
+        --ignorefile "$CI_PROJECT_DIR/.trivyignore.yaml" \
+        --exit-code 1 \
+        "$CI_PROJECT_DIR"
+  artifacts:
+    when: always
+    expire_in: 1 month
+    paths:
+      - trivy.json
+    reports:
+      dependency_scanning: gl-dependency-scanning-report.json
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
 
 unit-test:
   stage: test

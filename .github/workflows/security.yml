@@ -1,0 +1,102 @@
+name: security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly, so newly published CVEs surface even without a commit.
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GITLEAKS_VERSION: v8.30.1
+  TRIVY_VERSION: 0.74.0
+
+jobs:
+  secret-scan:
+    name: Secret detection
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history: the whole point is to catch secrets in *any* commit,
+          # not just the tip.
+          fetch-depth: 0
+
+      # The official gitleaks-action requires a paid licence for organisation
+      # accounts, so run the (MIT licensed) binary from its image instead.
+      - name: Run gitleaks
+        id: gitleaks
+        run: |
+          docker run --rm -v "$PWD:/repo" \
+            "zricethezav/gitleaks:${GITLEAKS_VERSION}" \
+            detect \
+              --source=/repo \
+              --config=/repo/.gitleaks.toml \
+              --report-format sarif \
+              --report-path /repo/gitleaks.sarif \
+              --redact \
+              --no-banner \
+              --exit-code 1
+        # --redact is mandatory: without it a detected secret would be printed
+        # into a public build log, i.e. leaked a second time.
+
+      - name: Upload gitleaks SARIF
+        if: always() && hashFiles('gitleaks.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: gitleaks.sarif
+          category: gitleaks
+
+  trivy:
+    name: Trivy (vulnerabilities, misconfig, secrets)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # First pass: never fails, produces the SARIF for the Security tab so
+      # findings stay visible even while an exception is active.
+      - name: Trivy scan (report)
+        run: |
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            "aquasec/trivy:${TRIVY_VERSION}" fs \
+              --scanners vuln,secret,misconfig \
+              --format sarif \
+              --output /repo/trivy.sarif \
+              --no-progress \
+              --exit-code 0 \
+              /repo
+
+      - name: Upload Trivy SARIF
+        if: always() && hashFiles('trivy.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy.sarif
+          category: trivy
+
+      # Second pass: the actual gate. Exceptions live in .trivyignore.yaml and
+      # every one of them carries an expiry date.
+      - name: Trivy scan (gate)
+        run: |
+          docker run --rm -v "$PWD:/repo" -w /repo \
+            "aquasec/trivy:${TRIVY_VERSION}" fs \
+              --scanners vuln,secret,misconfig \
+              --severity HIGH,CRITICAL \
+              --ignorefile /repo/.trivyignore.yaml \
+              --no-progress \
+              --exit-code 1 \
+              /repo

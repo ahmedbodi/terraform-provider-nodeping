@@ -1,0 +1,56 @@
+title = "terraform-provider-nodeping gitleaks config"
+
+# Start from the upstream ruleset (AWS keys, GitHub PATs, private keys, ...)
+# and add rules for the secret shapes that are relevant to this project.
+[extend]
+useDefault = true
+
+# --- Project-specific rules -------------------------------------------------
+# These cover the credential types that reached this repository via a committed
+# `terraform show -json` output. Keep them even after the incident: they are the
+# cheapest guard against the same class of leak.
+
+[[rules]]
+id = "msteams-powerautomate-webhook"
+description = "MS Teams / Power Automate / Logic Apps incoming webhook URL"
+regex = '''https://[A-Za-z0-9._-]*\.(?:webhook\.office\.com|logic\.azure\.com|environment\.api\.powerplatform\.com)[^\s"'<>]*'''
+tags = ["webhook", "azure", "teams"]
+
+[[rules]]
+id = "azure-sas-signature"
+description = "Azure shared access signature (sig= parameter)"
+regex = '''[?&]sig=[A-Za-z0-9%_\-]{24,}'''
+tags = ["azure", "sas"]
+
+[[rules]]
+id = "statuspage-component-address"
+description = "Atlassian Statuspage component notification address"
+regex = '''component\+[0-9a-f]{32}(?:\+[a-z_]+)?@notifications\.statuspage\.io'''
+tags = ["statuspage"]
+
+[[rules]]
+id = "nodeping-customer-id"
+description = "NodePing customer / contact ID"
+regex = '''\b20[0-9]{10}[A-Z0-9]{5}(?:-[A-Z]-[A-Z0-9]{5})?\b'''
+tags = ["nodeping"]
+  [rules.allowlist]
+  description = """
+  IDs used as documentation examples throughout docs/, examples/, tests and
+  schema descriptions. Allowlisted by value, not by path, so a *real* customer
+  ID still triggers the rule anywhere in the tree."""
+  regexes = [
+    '''201205050153W2Q4C''',  # NodePing public API documentation example
+    '''201203232048C76FH''',  # placeholder in .env.example
+  ]
+
+# --- Global allowlist -------------------------------------------------------
+[allowlist]
+description = "Documented placeholders, not real credentials"
+paths = [
+  '''\.gitleaks\.toml$''',
+  '''^\.env\.example$''',
+]
+regexes = [
+  '''your-api-token[a-z-]*''',
+  '''your-[a-z-]+-here''',
+]
