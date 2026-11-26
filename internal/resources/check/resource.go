@@ -744,13 +744,11 @@ func (r *CheckResource) mapCheckToModel(ctx context.Context, check *client.Check
 		model.Port = types.Int64Null()
 	}
 
+	// NodePing doesn't always return the username and never returns the password,
+	// so keep the known values rather than nulling them, which breaks every apply.
 	if check.Parameters.Username != "" {
 		model.Username = types.StringValue(check.Parameters.Username)
-	} else {
-		model.Username = types.StringNull()
 	}
-
-	model.Password = types.StringNull()
 
 	if len(check.Parameters.SendHeaders) > 0 {
 		headers, _ := types.MapValueFrom(ctx, types.StringType, check.Parameters.SendHeaders)
